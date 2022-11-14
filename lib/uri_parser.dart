@@ -56,6 +56,14 @@ class URIParser {
   /// [Uri] interpreted from the URI.
   Uri? uri;
 
+  /// Validates the URI.
+  bool validate() {
+    final typed = (type == URIType.file && file != null) ||
+        (type == URIType.directory && directory != null) ||
+        (type == URIType.network && uri != null);
+    return typed && (type != URIType.other);
+  }
+
   /// URIParser
   /// ---------
   ///
@@ -94,6 +102,7 @@ class URIParser {
             }
             type = URIType.file;
             file = File(path);
+            debugPrint(file.toString());
           }
           if (FS.typeSync_(path) == FileSystemEntityType.directory) {
             if (Platform.isWindows) {
@@ -101,6 +110,7 @@ class URIParser {
             }
             type = URIType.directory;
             directory = Directory(path);
+            debugPrint(directory.toString());
           }
         }
         // Resolve the network scheme.
@@ -111,6 +121,7 @@ class URIParser {
             resource.isScheme('RTMP')) {
           type = URIType.network;
           uri = resource;
+          debugPrint(uri.toString());
         }
       } catch (exception, stacktrace) {
         // Likely [FormatException] from [Uri.parse].
@@ -130,6 +141,7 @@ class URIParser {
             }
             type = URIType.file;
             file = File(value);
+            debugPrint(file.toString());
           }
           if (FS.typeSync_(value) == FileSystemEntityType.directory) {
             if (Platform.isWindows) {
@@ -137,6 +149,7 @@ class URIParser {
             }
             type = URIType.directory;
             directory = Directory(value);
+            debugPrint(directory.toString());
           }
         } catch (exception, stacktrace) {
           // Likely [FormatException] from [Uri.parse].
