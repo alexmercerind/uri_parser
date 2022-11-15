@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:test/test.dart';
 import 'package:uri_parser/uri_parser.dart';
 

@@ -41,9 +41,6 @@ class URIParser {
   /// The [String] URI to be parsed.
   final String? data;
 
-  /// Whether to log errors to the console or not.
-  final bool verbose;
-
   /// Type of the URI.
   URIType type = URIType.other;
 
@@ -97,10 +94,7 @@ class URIParser {
   ///
   /// Converts a [String] URI to usable [File], [Directory] or [Uri] result.
   ///
-  URIParser(
-    this.data, {
-    this.verbose = true,
-  }) {
+  URIParser(this.data) {
     var value = data?.trim();
     if (value != null) {
       // Get rid of quotes, if any.
@@ -113,20 +107,17 @@ class URIParser {
           !value.toLowerCase().startsWith('file:///')) {
         value = 'file:///${value.substring(7)}';
       }
-      debugPrint(value.toString());
       // Resolve the FILE scheme.
       try {
         final resource = Uri.parse(value);
         if (resource.isScheme('FILE')) {
           var path = resource.toFilePath();
-          debugPrint(resource.toString());
           if (FS.typeSync_(path) == FileSystemEntityType.file) {
             if (Platform.isWindows) {
               path = path.replaceAll('\\', '/');
             }
             type = URIType.file;
             file = File(path);
-            debugPrint(file.toString());
           }
           if (FS.typeSync_(path) == FileSystemEntityType.directory) {
             if (Platform.isWindows) {
@@ -134,7 +125,6 @@ class URIParser {
             }
             type = URIType.directory;
             directory = Directory(path);
-            debugPrint(directory.toString());
           }
         }
         // Resolve the network scheme.
@@ -145,12 +135,9 @@ class URIParser {
             resource.isScheme('RTMP')) {
           type = URIType.network;
           uri = resource;
-          debugPrint(uri.toString());
         }
-      } catch (exception, stacktrace) {
-        // Likely [FormatException] from [Uri.parse].
-        debugPrint(exception.toString());
-        debugPrint(stacktrace.toString());
+      } catch (exception) {
+        // NO;OP
       }
       // Resolve direct [File] or [Directory] paths.
       if (type == URIType.other) {
@@ -161,7 +148,6 @@ class URIParser {
             }
             type = URIType.file;
             file = File(value);
-            debugPrint(file.toString());
           }
           if (FS.typeSync_(value) == FileSystemEntityType.directory) {
             if (Platform.isWindows) {
@@ -169,21 +155,11 @@ class URIParser {
             }
             type = URIType.directory;
             directory = Directory(value);
-            debugPrint(directory.toString());
           }
-        } catch (exception, stacktrace) {
-          // Likely [FormatException] from [Uri.parse].
-          debugPrint(exception.toString());
-          debugPrint(stacktrace.toString());
+        } catch (exception) {
+          // NO;OP
         }
       }
-    }
-  }
-
-  /// Prints the passed [object] to the console.
-  void debugPrint(String message) {
-    if (verbose) {
-      print(message);
     }
   }
 }
