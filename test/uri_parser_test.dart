@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:test/test.dart';
 import 'package:uri_parser/uri_parser.dart';
 
@@ -16,20 +18,42 @@ void main() {
     expect(parser.directory, isNotNull);
     expect(parser.uri, isNull);
   });
-  test('file:// File with backward slashes', () {
-    final parser = URIParser('file://C:\\Windows\\explorer.exe');
+  test('file:// File with three forward slashes', () {
+    final parser = URIParser('file:///C:/Windows/explorer.exe');
     expect(parser.type, URIType.file);
     expect(parser.file, isNotNull);
     expect(parser.directory, isNull);
     expect(parser.uri, isNull);
   });
-  test('file:// Directory with backward slashes', () {
-    final parser = URIParser('file://C:\\Windows\\System32');
+  test('file:// Directory with three forward slashes', () {
+    final parser = URIParser('file:///C:/Windows/System32');
     expect(parser.type, URIType.directory);
     expect(parser.file, isNull);
     expect(parser.directory, isNotNull);
     expect(parser.uri, isNull);
   });
+  test(
+    'file:// File with backward slashes',
+    () {
+      final parser = URIParser('file://C:\\Windows\\explorer.exe');
+      expect(parser.type, URIType.file);
+      expect(parser.file, isNotNull);
+      expect(parser.directory, isNull);
+      expect(parser.uri, isNull);
+    },
+    skip: !Platform.isWindows,
+  );
+  test(
+    'file:// Directory with backward slashes',
+    () {
+      final parser = URIParser('file://C:\\Windows\\System32');
+      expect(parser.type, URIType.directory);
+      expect(parser.file, isNull);
+      expect(parser.directory, isNotNull);
+      expect(parser.uri, isNull);
+    },
+    skip: !Platform.isWindows,
+  );
   test('raw path File', () {
     final parser = URIParser('C:/Windows/explorer.exe');
     expect(parser.type, URIType.file);
@@ -44,20 +68,28 @@ void main() {
     expect(parser.directory, isNotNull);
     expect(parser.uri, isNull);
   });
-  test('raw path File with backward slashes', () {
-    final parser = URIParser('C:\\Windows\\explorer.exe');
-    expect(parser.type, URIType.file);
-    expect(parser.file, isNotNull);
-    expect(parser.directory, isNull);
-    expect(parser.uri, isNull);
-  });
-  test('raw path Directory with backward slashes', () {
-    final parser = URIParser('C:\\Windows\\System32');
-    expect(parser.type, URIType.directory);
-    expect(parser.file, isNull);
-    expect(parser.directory, isNotNull);
-    expect(parser.uri, isNull);
-  });
+  test(
+    'raw path File with backward slashes',
+    () {
+      final parser = URIParser('C:\\Windows\\explorer.exe');
+      expect(parser.type, URIType.file);
+      expect(parser.file, isNotNull);
+      expect(parser.directory, isNull);
+      expect(parser.uri, isNull);
+    },
+    skip: !Platform.isWindows,
+  );
+  test(
+    'raw path Directory with backward slashes',
+    () {
+      final parser = URIParser('C:\\Windows\\System32');
+      expect(parser.type, URIType.directory);
+      expect(parser.file, isNull);
+      expect(parser.directory, isNotNull);
+      expect(parser.uri, isNull);
+    },
+    skip: !Platform.isWindows,
+  );
   test('network URIs', () {
     final http = URIParser('http://www.test.com');
     expect(http.type, URIType.network);
@@ -88,6 +120,25 @@ void main() {
   test('unknown URIs', () {
     final parser = URIParser('unknown://www.test.com');
     expect(parser.type, URIType.other);
+    expect(parser.file, isNull);
+    expect(parser.directory, isNull);
     expect(parser.uri, isNull);
+  });
+  test('exceptions', () {
+    final abc = URIParser('abc');
+    expect(abc.type, URIType.other);
+    expect(abc.file, isNull);
+    expect(abc.directory, isNull);
+    expect(abc.uri, isNull);
+    final empty = URIParser('');
+    expect(empty.type, URIType.other);
+    expect(empty.file, isNull);
+    expect(empty.directory, isNull);
+    expect(empty.uri, isNull);
+    final null_ = URIParser(null);
+    expect(null_.type, URIType.other);
+    expect(null_.file, isNull);
+    expect(null_.directory, isNull);
+    expect(null_.uri, isNull);
   });
 }
