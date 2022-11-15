@@ -62,7 +62,7 @@ class URIParser {
   /// The final [Uri] result after parsing.
   /// Prefer accessing [file], [directory] or [uri] directly if possible.
   ///
-  /// Throws [FormatException] if [type] is [URIType.other].
+  /// Throws [FormatException] if [type] is [URIType.other] & could not be parsed.
   ///
   Uri get result {
     if (file != null) {
@@ -78,10 +78,7 @@ class URIParser {
       return uri!;
     }
     assert(type == URIType.other);
-    throw FormatException(
-      'Invalid URI',
-      data,
-    );
+    return Uri.parse(data!);
   }
 
   /// Validates the URI.
