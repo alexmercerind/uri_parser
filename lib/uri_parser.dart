@@ -1,4 +1,4 @@
-/// This file is a part of media_engine (https://github.com/alexmercerind/media_engine).
+/// This file is a part of uri_parser (https://github.com/alexmercerind/uri_parser).
 /// Copyright © 2022 & onwards, Hitesh Kumar Saini <saini123hitesh@gmail.com>.
 ///
 /// This program is free software: you can redistribute it and/or modify
@@ -48,13 +48,41 @@ class URIParser {
   URIType type = URIType.other;
 
   /// [File] interpreted from the URI.
+  /// This is only available if [type] is [URIType.file].
   File? file;
 
   /// [Directory] interpreted from the URI.
+  /// This is only available if [type] is [URIType.directory].
   Directory? directory;
 
   /// [Uri] interpreted from the URI.
+  /// This is only available if [type] is [URIType.network].
   Uri? uri;
+
+  /// The final [Uri] result after parsing.
+  /// Prefer accessing [file], [directory] or [uri] directly if possible.
+  ///
+  /// Throws [FormatException] if [type] is [URIType.other].
+  ///
+  Uri get result {
+    if (file != null) {
+      assert(type == URIType.file);
+      return file!.uri;
+    }
+    if (directory != null) {
+      assert(type == URIType.directory);
+      return directory!.uri;
+    }
+    if (uri != null) {
+      assert(type == URIType.network);
+      return uri!;
+    }
+    assert(type == URIType.other);
+    throw FormatException(
+      'Invalid URI',
+      data,
+    );
+  }
 
   /// Validates the URI.
   bool validate() {
@@ -79,23 +107,19 @@ class URIParser {
       if (value.startsWith('"') && value.endsWith('"')) {
         value = value.substring(1, value.length - 1);
       }
-      // Make sure to convert file:// URI with two slashes to three slashes.
+      // Make sure to convert file URI with two slashes (file://) to three slashes (file:///).
       // Since [Uri.parse] doesn't support file:// URI with two slashes.
       if (value.toLowerCase().startsWith('file://') &&
           !value.toLowerCase().startsWith('file:///')) {
         value = 'file:///${value.substring(7)}';
       }
-
       debugPrint(value.toString());
-      // Resolve the file:// scheme.
+      // Resolve the FILE scheme.
       try {
         final resource = Uri.parse(value);
         if (resource.isScheme('FILE')) {
           var path = resource.toFilePath();
-          // Replace forward slashes with backslashes on Windows, to make [FS] work correctly.
-          if (Platform.isWindows) {
-            path = path.replaceAll('/', '\\');
-          }
+          debugPrint(resource.toString());
           if (FS.typeSync_(path) == FileSystemEntityType.file) {
             if (Platform.isWindows) {
               path = path.replaceAll('\\', '/');
@@ -131,10 +155,6 @@ class URIParser {
       // Resolve direct [File] or [Directory] paths.
       if (type == URIType.other) {
         try {
-          // Replace forward slashes with backslashes on Windows, to make [FS] work correctly.
-          if (Platform.isWindows) {
-            value = value.replaceAll('/', '\\');
-          }
           if (FS.typeSync_(value) == FileSystemEntityType.file) {
             if (Platform.isWindows) {
               value = value.replaceAll('\\', '/');
