@@ -146,7 +146,7 @@ void main() {
     expect(parser.file, isNull);
     expect(parser.directory, isNull);
     expect(parser.uri, isNull);
-    expect(() => parser.result, throwsFormatException);
+    expect(parser.result.toString(), equals('unknown://www.test.com'));
   });
   test('exceptions', () {
     final abc = URIParser('abc');
@@ -154,13 +154,13 @@ void main() {
     expect(abc.file, isNull);
     expect(abc.directory, isNull);
     expect(abc.uri, isNull);
-    expect(() => abc.result, throwsFormatException);
+    expect(abc.result.toString(), 'abc');
     final empty = URIParser('');
     expect(empty.type, URIType.other);
     expect(empty.file, isNull);
     expect(empty.directory, isNull);
     expect(empty.uri, isNull);
-    expect(() => empty.result, throwsFormatException);
+    expect(empty.result.toString(), '');
     final null_ = URIParser(null);
     expect(null_.type, URIType.other);
     expect(null_.file, isNull);

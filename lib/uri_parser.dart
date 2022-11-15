@@ -65,6 +65,9 @@ class URIParser {
   /// Throws [FormatException] if [type] is [URIType.other] & could not be parsed.
   ///
   Uri get result {
+    if (data == null) {
+      throw FormatException('', null);
+    }
     if (file != null) {
       assert(type == URIType.file);
       return file!.uri;
