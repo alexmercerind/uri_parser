@@ -1,19 +1,8 @@
 /// This file is a part of uri_parser (https://github.com/alexmercerind/uri_parser).
-/// Copyright © 2022 & onwards, Hitesh Kumar Saini <saini123hitesh@gmail.com>.
 ///
-/// This program is free software: you can redistribute it and/or modify
-/// it under the terms of the GNU Affero General Public License as published by
-/// the Free Software Foundation, either version 3 of the License, or
-/// (at your option) any later version.
-///
-/// This program is distributed in the hope that it will be useful,
-/// but WITHOUT ANY WARRANTY; without even the implied warranty of
-/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-/// GNU Affero General Public License for more details.
-///
-/// You should have received a copy of the GNU Affero General Public License
-/// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+/// Copyright © 2021 & onwards, Hitesh Kumar Saini <saini123hitesh@gmail.com>.
+/// All rights reserved.
+/// Use of this source code is governed by MIT license that can be found in the LICENSE file.
 import 'dart:io';
 import 'package:safe_local_storage/safe_local_storage.dart';
 
@@ -94,7 +83,10 @@ class URIParser {
   ///
   /// Converts a [String] URI to usable [File], [Directory] or [Uri] result.
   ///
-  URIParser(this.data) {
+  URIParser(
+    this.data, {
+    List<String> networkSchemes = kDefaultNetworkSchemes,
+  }) {
     var value = data?.trim();
     if (value != null) {
       // Get rid of quotes, if any.
@@ -110,6 +102,14 @@ class URIParser {
       // Resolve the FILE scheme.
       try {
         final resource = Uri.parse(value);
+        // Resolve the network scheme.
+        bool isNetworkScheme = false;
+        for (final scheme in networkSchemes) {
+          if (resource.isScheme(scheme)) {
+            isNetworkScheme = true;
+            break;
+          }
+        }
         if (resource.isScheme('FILE')) {
           var path = resource.toFilePath();
           if (FS.typeSync_(path) == FileSystemEntityType.file) {
@@ -126,18 +126,12 @@ class URIParser {
             type = URIType.directory;
             directory = Directory(path);
           }
-        }
-        // Resolve the network scheme.
-        else if (resource.isScheme('HTTP') ||
-            resource.isScheme('HTTPS') ||
-            resource.isScheme('FTP') ||
-            resource.isScheme('RTSP') ||
-            resource.isScheme('RTMP')) {
+        } else if (isNetworkScheme) {
           type = URIType.network;
           uri = resource;
         }
       } catch (exception) {
-        // NO;OP
+        // Do nothing.
       }
       // Resolve direct [File] or [Directory] paths.
       if (type == URIType.other) {
@@ -157,9 +151,18 @@ class URIParser {
             directory = Directory(value);
           }
         } catch (exception) {
-          // NO;OP
+          // Do nothing.
         }
       }
     }
   }
+
+  /// Default URI schemes identified as [URIType.network].
+  static const kDefaultNetworkSchemes = [
+    'HTTP',
+    'HTTPS',
+    'FTP',
+    'RTSP',
+    'RTMP',
+  ];
 }
