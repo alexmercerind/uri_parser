@@ -2,7 +2,7 @@ name: uri_parser
 description: A minimal & safe utility to parse URIs.
 homepage: https://github.com/alexmercerind/uri_parser
 repository: https://github.com/alexmercerind/uri_parser
-version: 1.0.0
+version: 2.0.0
 
 environment:
   sdk: ">=2.17.0 <3.0.0"
