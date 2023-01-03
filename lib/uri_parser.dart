@@ -93,23 +93,50 @@ class URIParser {
       if (value.startsWith('"') && value.endsWith('"')) {
         value = value.substring(1, value.length - 1);
       }
-      // Make sure to convert file URI with two slashes (file://) to three slashes (file:///).
-      // Since [Uri.parse] doesn't support file:// URI with two slashes.
-      if (value.toLowerCase().startsWith('file://') &&
-          !value.toLowerCase().startsWith('file:///')) {
-        value = 'file:///${value.substring(7)}';
+      // Dart's [Uri] & [File] classes on Windows use (based on testing & user-feedback so far):
+      // * Three slashes file:/// for local file paths. e.g. file:///C:/Users/Hitesh/Music/Sample.FLAC
+      // * Two slashes file:// for network paths i.e. NAS. e.g. file://192.168.69.420/alexmercerind/mnt/media/music/sample.flac
+      // Make sure to:
+      // * Convert local file URI with two slashes `file://` to three slashes `file:///` for correct parsing.
+      // * Convert network file URI with three slashes `file:///` to two slashes `file://` for correct parsing.
+      // Since [Uri.parse] doesn't support local file:// URI with two slashes.
+      if (Platform.isWindows && value.toLowerCase().startsWith('file://')) {
+        bool local = true;
+        try {
+          // Check if the first character after `file://` is a number.
+          final character = value
+              .split('file://')
+              .last
+              .split('/')
+              .firstWhere((e) => e.isNotEmpty)[0];
+          local = int.tryParse(character) == null;
+        } catch (exception) {
+          // Do nothing.
+        }
+        if (local) {
+          // Replace two slashes with three slashes.
+          if (value.toLowerCase().startsWith('file://') &&
+              !value.toLowerCase().startsWith('file:///')) {
+            value = 'file:///${value.substring(7)}';
+          }
+        } else {
+          // Replace three slashes with two slashes.
+          if (value.toLowerCase().startsWith('file:///')) {
+            value = 'file://${value.substring(8)}';
+          }
+        }
       }
-      // Resolve the FILE scheme.
       try {
         final resource = Uri.parse(value);
         // Resolve the network scheme.
-        bool isNetworkScheme = false;
+        bool network = false;
         for (final scheme in networkSchemes) {
           if (resource.isScheme(scheme)) {
-            isNetworkScheme = true;
+            network = true;
             break;
           }
         }
+        // Resolve the FILE scheme.
         if (resource.isScheme('FILE')) {
           var path = resource.toFilePath();
           if (FS.typeSync_(path) == FileSystemEntityType.file) {
@@ -126,7 +153,7 @@ class URIParser {
             type = URIType.directory;
             directory = Directory(path);
           }
-        } else if (isNetworkScheme) {
+        } else if (network) {
           type = URIType.network;
           uri = resource;
         }
