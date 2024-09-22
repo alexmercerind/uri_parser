@@ -1,8 +1,3 @@
-/// This file is a part of uri_parser (https://github.com/alexmercerind/uri_parser).
-///
-/// Copyright © 2021 & onwards, Hitesh Kumar Saini <saini123hitesh@gmail.com>.
-/// All rights reserved.
-/// Use of this source code is governed by MIT license that can be found in the LICENSE file.
 import 'dart:io';
 import 'package:test/test.dart';
 import 'package:uri_parser/uri_parser.dart';
@@ -14,13 +9,18 @@ void main() {
   final filePath = file.path;
   final filePathWithBackSlashes = file.path.replaceAll('/', '\\');
   final fileURIWithTwoSlashes = 'file://${file.path}';
-  final fileURIWithThreeSlashes = 'file:///${file.path}';
+  final fileURIWithThreeSlashes =
+      Platform.isWindows ? 'file:///${file.path}' : 'file://${file.path}';
   final fileURIWithBackSlashes = 'file://${file.path.replaceAll('/', '\\')}';
   final directoryPath = directory.path;
   final directoryPathWithBackSlashes = directory.path.replaceAll('/', '\\');
   final directoryURIWithTwoSlashes = 'file://${directory.path}';
-  final directoryURIWithThreeSlashes = 'file:///${directory.path}';
-  final directoryURIWithTrailingSlash = 'file:///${directory.path}/';
+  final directoryURIWithThreeSlashes = Platform.isWindows
+      ? 'file:///${directory.path}'
+      : 'file://${directory.path}';
+  final directoryURIWithTrailingSlash = Platform.isWindows
+      ? 'file:///${directory.path}/'
+      : 'file://${directory.path}/';
   final directoryURIWithBackSlashes =
       'file://${directory.path.replaceAll('/', '\\')}';
   // Checks to ensure the testing data is correct.
