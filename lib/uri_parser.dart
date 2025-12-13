@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:safe_local_storage/safe_local_storage.dart';
+import 'package:path/path.dart';
 
 /// {@template uri_type}
 ///
@@ -30,6 +30,19 @@ enum URIType {
 ///
 /// {@endtemplate}
 class URIParser {
+  static const String kFileScheme2 = 'file://';
+  static const String kFileScheme3 = 'file:///';
+  static const List<String> kDefaultNetworkSchemes = [
+    'FTP',
+    'HTTP',
+    'HTTPS',
+    'NFS',
+    'RTMP',
+    'RTSP',
+    'SFTP',
+    'SMB',
+  ];
+
   /// Data.
   final String? data;
 
@@ -64,104 +77,88 @@ class URIParser {
 
   /// {@macro uri_parser}
   URIParser(this.data, {List<String> networkSchemes = kDefaultNetworkSchemes}) {
-    var value = data?.trim();
-    if (value == null || value.isEmpty) return;
-    // Get rid of quotes, if any.
-    if (value.startsWith('"') && value.endsWith('"')) {
+    final value = _sanitizeData(data);
+    if (value == null) return;
+
+    try {
+      // Resolve network schemes.
+      final resource = Uri.parse(value);
+      for (final scheme in networkSchemes) {
+        if (resource.isScheme(scheme)) {
+          type = URIType.network;
+          uri = resource;
+          return;
+        }
+      }
+      // Resolve file:// scheme.
+      if (resource.isScheme('FILE')) {
+        _setFileOrDirectory(resource.toFilePath());
+      }
+    } catch (_) {}
+    // Resolve file or directory paths.
+    if (type == URIType.other && _isFileOrDirectory(value)) {
+      _setFileOrDirectory(value);
+    }
+  }
+
+  String? _sanitizeData(String? data) {
+    String? value = data?.trim();
+
+    if (value == null || value.isEmpty) return null;
+
+    if ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))) {
       value = value.substring(1, value.length - 1);
     }
-    // Dart's [Uri] & [File] classes on Windows use (based on testing & user-feedback so far):
+
+    value = value.replaceAll('\\', '/');
+
+    // Dart's [Uri] & [File] classes use (based on testing & user-feedback so far):
     // * Three slashes i.e. file:/// for storage file paths.
     // * Two slashes i.e. file:// for network paths.
     // Make sure to convert:
     // * Storage file URI with two slashes to three slashes for correct parsing.
     // * Network file URI with three slashes to two slashes for correct parsing.
-    if (Platform.isWindows && value.toLowerCase().startsWith(kFileScheme2)) {
+    if (value.toLowerCase().startsWith(kFileScheme2)) {
       bool storage = true;
       try {
         // Check if the first character after file:// is a number.
         final character = value
             .split(kFileScheme2)
-            .last
-            .split('/')
-            .firstWhere((e) => e.isNotEmpty)[0];
-        storage = int.tryParse(character) == null;
+            .lastOrNull
+            ?.split('/')
+            .firstWhere((e) => e.isNotEmpty, orElse: () => '');
+        storage = int.tryParse(character ?? '') == null;
       } catch (_) {}
       if (storage) {
-        // Replace two slashes with three slashes.
-        if (value.toLowerCase().startsWith(kFileScheme2) &&
-            !value.toLowerCase().startsWith(kFileScheme3)) {
-          value = '$kFileScheme3${value.substring(kFileScheme2.length)}';
-        }
+        // Ensure exactly three slashes.
+        value = value.replaceFirst(
+          RegExp(r'^file:(?:/{1,})'),
+          kFileScheme3,
+        );
       } else {
-        // Replace three slashes with two slashes.
-        if (value.toLowerCase().startsWith(kFileScheme3)) {
-          value = '$kFileScheme2${value.substring(kFileScheme3.length)}';
-        }
+        // Ensure exactly two slashes.
+        value = value.replaceFirst(
+          RegExp(r'^file:(?:/{1,})'),
+          kFileScheme2,
+        );
       }
     }
-    try {
-      final resource = Uri.parse(value);
-      // Resolve the network scheme.
-      bool network = false;
-      for (final scheme in networkSchemes) {
-        if (resource.isScheme(scheme)) {
-          network = true;
-          break;
-        }
-      }
-      // Resolve the FILE scheme.
-      if (resource.isScheme('FILE')) {
-        var path = resource.toFilePath();
-        if (FS.typeSync_(path) == FileSystemEntityType.file) {
-          if (Platform.isWindows) {
-            path = path.replaceAll('\\', '/');
-          }
-          type = URIType.file;
-          file = File(path);
-        }
-        if (FS.typeSync_(path) == FileSystemEntityType.directory) {
-          if (Platform.isWindows) {
-            path = path.replaceAll('\\', '/');
-          }
-          type = URIType.directory;
-          directory = Directory(path);
-        }
-      } else if (network) {
-        type = URIType.network;
-        uri = resource;
-      }
-    } catch (_) {}
-    // Resolve direct file or directory paths.
-    if (type == URIType.other) {
-      try {
-        if (FS.typeSync_(value) == FileSystemEntityType.file) {
-          if (Platform.isWindows) {
-            value = value.replaceAll('\\', '/');
-          }
-          type = URIType.file;
-          file = File(value);
-        }
-        if (FS.typeSync_(value) == FileSystemEntityType.directory) {
-          if (Platform.isWindows) {
-            value = value.replaceAll('\\', '/');
-          }
-          type = URIType.directory;
-          directory = Directory(value);
-        }
-      } catch (_) {}
-    }
+
+    return value;
   }
 
-  /// Default URI schemes to identified as [URIType.network].
-  static const List<String> kDefaultNetworkSchemes = [
-    'HTTP',
-    'HTTPS',
-    'FTP',
-    'RTSP',
-    'RTMP',
-  ];
+  bool _isFileOrDirectory(String path) {
+    return RegExp(r'^[A-Za-z]:/').hasMatch(path) || path.startsWith('/');
+  }
 
-  static const String kFileScheme2 = 'file://';
-  static const String kFileScheme3 = 'file:///';
+  void _setFileOrDirectory(String path) {
+    if (basename(path).contains('.')) {
+      type = URIType.file;
+      file = File(path);
+    } else {
+      type = URIType.directory;
+      directory = Directory(path);
+    }
+  }
 }

@@ -4,8 +4,9 @@ import 'package:uri_parser/uri_parser.dart';
 
 void main() {
   // Platform independent data for testing.
-  final file = File(Platform.resolvedExecutable.replaceAll('\\', '/'));
-  final directory = file.parent;
+  final file = File(Platform.script.path.replaceAll('\\', '/'));
+  final directory = File(Directory.systemTemp.path.replaceAll('\\', '/'));
+  final networkDirectory = Directory('/192.168.1.1/share');
   final filePath = file.path;
   final filePathWithBackSlashes = file.path.replaceAll('/', '\\');
   final fileURIWithTwoSlashes = 'file://${file.path}';
@@ -23,6 +24,18 @@ void main() {
       : 'file://${directory.path}/';
   final directoryURIWithBackSlashes =
       'file://${directory.path.replaceAll('/', '\\')}';
+  final networkDirectoryPath = networkDirectory.path;
+  final networkDirectoryPathWithBackSlashes =
+      networkDirectory.path.replaceAll('/', '\\');
+  final networkDirectoryURIWithTwoSlashes = 'file://${networkDirectory.path}';
+  final networkDirectoryURIWithThreeSlashes = Platform.isWindows
+      ? 'file:///${networkDirectory.path}'
+      : 'file://${networkDirectory.path}';
+  final networkDirectoryURIWithTrailingSlash = Platform.isWindows
+      ? 'file:///${networkDirectory.path}/'
+      : 'file://${networkDirectory.path}/';
+  final networkDirectoryURIWithBackSlashes =
+      'file://${networkDirectory.path.replaceAll('/', '\\')}';
   // Checks to ensure the testing data is correct.
   assert(!filePath.contains('\\'));
   assert(!filePathWithBackSlashes.contains('/'));
@@ -31,6 +44,22 @@ void main() {
   assert(!directoryPath.contains('\\'));
   assert(!directoryPathWithBackSlashes.contains('/'));
   assert(!directoryURIWithBackSlashes.substring(7).contains('/'));
+
+  // Print all values for debugging
+  print('file: $file');
+  print('directory: $directory');
+  print('filePath: $filePath');
+  print('filePathWithBackSlashes: $filePathWithBackSlashes');
+  print('fileURIWithTwoSlashes: $fileURIWithTwoSlashes');
+  print('fileURIWithThreeSlashes: $fileURIWithThreeSlashes');
+  print('fileURIWithBackSlashes: $fileURIWithBackSlashes');
+  print('directoryPath: $directoryPath');
+  print('directoryPathWithBackSlashes: $directoryPathWithBackSlashes');
+  print('directoryURIWithTwoSlashes: $directoryURIWithTwoSlashes');
+  print('directoryURIWithThreeSlashes: $directoryURIWithThreeSlashes');
+  print('directoryURIWithTrailingSlash: $directoryURIWithTrailingSlash');
+  print('directoryURIWithBackSlashes: $directoryURIWithBackSlashes');
+
   // Actual tests.
   test('file:// File', () {
     final parser = URIParser(fileURIWithTwoSlashes);
@@ -48,6 +77,15 @@ void main() {
     expect(parser.uri, isNull);
     expect(parser.result.toString(), equals(directoryURIWithTrailingSlash));
   });
+  test('file:// Network Directory', () {
+    final parser = URIParser(networkDirectoryURIWithTwoSlashes);
+    expect(parser.type, URIType.directory);
+    expect(parser.file, isNull);
+    expect(parser.directory, isNotNull);
+    expect(parser.uri, isNull);
+    expect(
+        parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+  });
   test('file:// File with three forward slashes', () {
     final parser = URIParser(fileURIWithThreeSlashes);
     expect(parser.type, URIType.file);
@@ -63,6 +101,15 @@ void main() {
     expect(parser.directory, isNotNull);
     expect(parser.uri, isNull);
     expect(parser.result.toString(), equals(directoryURIWithTrailingSlash));
+  });
+  test('file:// Network Directory with three forward slashes', () {
+    final parser = URIParser(networkDirectoryURIWithThreeSlashes);
+    expect(parser.type, URIType.directory);
+    expect(parser.file, isNull);
+    expect(parser.directory, isNotNull);
+    expect(parser.uri, isNull);
+    expect(
+        parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
   });
   test('file:// File with backward slashes', () {
     final parser = URIParser(fileURIWithBackSlashes);
@@ -80,6 +127,15 @@ void main() {
     expect(parser.uri, isNull);
     expect(parser.result.toString(), equals(directoryURIWithTrailingSlash));
   });
+  test('file:// Network Directory with backward slashes', () {
+    final parser = URIParser(networkDirectoryURIWithBackSlashes);
+    expect(parser.type, URIType.directory);
+    expect(parser.file, isNull);
+    expect(parser.directory, isNotNull);
+    expect(parser.uri, isNull);
+    expect(
+        parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+  });
   test('raw path File', () {
     final parser = URIParser(filePath);
     expect(parser.type, URIType.file);
@@ -96,6 +152,15 @@ void main() {
     expect(parser.uri, isNull);
     expect(parser.result.toString(), equals(directoryURIWithTrailingSlash));
   });
+  test('raw path Network Directory', () {
+    final parser = URIParser(networkDirectoryPath);
+    expect(parser.type, URIType.directory);
+    expect(parser.file, isNull);
+    expect(parser.directory, isNotNull);
+    expect(parser.uri, isNull);
+    expect(
+        parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+  });
   test('raw path File with backward slashes', () {
     final parser = URIParser(fileURIWithBackSlashes);
     expect(parser.type, URIType.file);
@@ -111,6 +176,15 @@ void main() {
     expect(parser.directory, isNotNull);
     expect(parser.uri, isNull);
     expect(parser.result.toString(), equals(directoryURIWithTrailingSlash));
+  });
+  test('raw path Network Directory with backward slashes', () {
+    final parser = URIParser(networkDirectoryPathWithBackSlashes);
+    expect(parser.type, URIType.directory);
+    expect(parser.file, isNull);
+    expect(parser.directory, isNotNull);
+    expect(parser.uri, isNull);
+    expect(
+        parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
   });
   test('network URIs', () {
     final http = URIParser('http://www.test.com');
