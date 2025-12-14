@@ -1,3 +1,7 @@
+## 3.0.2
+
+- Update release.
+
 ## 3.0.1
 
 - Update release.

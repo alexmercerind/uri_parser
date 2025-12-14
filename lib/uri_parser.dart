@@ -111,7 +111,7 @@ class URIParser {
       value = value.substring(1, value.length - 1);
     }
 
-    value = value.replaceAll('\\', '/');
+    value = value.replaceAll(r'\', '/');
 
     // Dart's [Uri] & [File] classes use (based on testing & user-feedback so far):
     // * Three slashes i.e. file:/// for storage file paths.
@@ -155,10 +155,10 @@ class URIParser {
   void _setFileOrDirectory(String path) {
     if (basename(path).contains('.')) {
       type = URIType.file;
-      file = File(path);
+      file = File(path.replaceAll(r'\', '/'));
     } else {
       type = URIType.directory;
-      directory = Directory(path);
+      directory = Directory(path.replaceAll(r'\', '/'));
     }
   }
 }
