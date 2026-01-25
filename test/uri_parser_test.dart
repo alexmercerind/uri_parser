@@ -7,31 +7,27 @@ void main() {
   final file = File(Platform.script.toFilePath().replaceAll('\\', '/'));
   final directory = File(Directory.systemTemp.path.replaceAll('\\', '/'));
   final networkDirectory = Directory('/192.168.1.1/share');
+  final networkFile = File('/192.168.1.1/share/document.txt');
   final filePath = file.path;
   final filePathWithBackSlashes = file.path.replaceAll('/', '\\');
   final fileURIWithTwoSlashes = 'file://${file.path}';
-  final fileURIWithThreeSlashes =
-      Platform.isWindows ? 'file:///${file.path}' : 'file://${file.path}';
+  final fileURIWithThreeSlashes = Platform.isWindows ? 'file:///${file.path}' : 'file://${file.path}';
   final fileURIWithBackSlashes = 'file://${file.path.replaceAll('/', '\\')}';
   final directoryPath = directory.path;
   final directoryPathWithBackSlashes = directory.path.replaceAll('/', '\\');
   final directoryURIWithTwoSlashes = 'file://${directory.path}';
-  final directoryURIWithThreeSlashes = Platform.isWindows
-      ? 'file:///${directory.path}'
-      : 'file://${directory.path}';
-  final directoryURIWithTrailingSlash = Platform.isWindows
-      ? 'file:///${directory.path}/'
-      : 'file://${directory.path}/';
-  final directoryURIWithBackSlashes =
-      'file://${directory.path.replaceAll('/', '\\')}';
+  final directoryURIWithThreeSlashes = Platform.isWindows ? 'file:///${directory.path}' : 'file://${directory.path}';
+  final directoryURIWithTrailingSlash = Platform.isWindows ? 'file:///${directory.path}/' : 'file://${directory.path}/';
+  final directoryURIWithBackSlashes = 'file://${directory.path.replaceAll('/', '\\')}';
   final networkDirectoryPath = networkDirectory.path;
-  final networkDirectoryPathWithBackSlashes =
-      networkDirectory.path.replaceAll('/', '\\');
+  final networkDirectoryPathWithBackSlashes = networkDirectory.path.replaceAll('/', '\\');
   final networkDirectoryURIWithThreeSlashes = 'file://${networkDirectory.path}';
-  final networkDirectoryURIWithTrailingSlash =
-      'file://${networkDirectory.path}/';
-  final networkDirectoryURIWithBackSlashes =
-      'file://${networkDirectory.path.replaceAll('/', '\\')}';
+  final networkDirectoryURIWithTrailingSlash = 'file://${networkDirectory.path}/';
+  final networkDirectoryURIWithBackSlashes = 'file://${networkDirectory.path.replaceAll('/', '\\')}';
+  final networkFilePath = networkFile.path;
+  final networkFilePathWithBackSlashes = networkFile.path.replaceAll('/', '\\');
+  final networkFileURIWithThreeSlashes = 'file://${networkFile.path}';
+  final networkFileURIWithBackSlashes = 'file://${networkFile.path.replaceAll('/', '\\')}';
   // Checks to ensure the testing data is correct.
   assert(!filePath.contains('\\'));
   assert(!filePathWithBackSlashes.contains('/'));
@@ -44,6 +40,10 @@ void main() {
   assert(!networkDirectoryPath.contains('\\'));
   assert(!networkDirectoryPathWithBackSlashes.contains('/'));
   assert(!networkDirectoryURIWithBackSlashes.substring(7).contains('/'));
+  assert(!networkFilePath.endsWith('/'));
+  assert(!networkFilePath.contains('\\'));
+  assert(!networkFilePathWithBackSlashes.contains('/'));
+  assert(!networkFileURIWithBackSlashes.substring(7).contains('/'));
 
   // Print all values for debugging
   print('file: $file');
@@ -61,14 +61,15 @@ void main() {
   print('directoryURIWithBackSlashes: $directoryURIWithBackSlashes');
   print('networkDirectory: $networkDirectory');
   print('networkDirectoryPath: $networkDirectoryPath');
-  print(
-      'networkDirectoryPathWithBackSlashes: $networkDirectoryPathWithBackSlashes');
-  print(
-      'networkDirectoryURIWithThreeSlashes: $networkDirectoryURIWithThreeSlashes');
-  print(
-      'networkDirectoryURIWithTrailingSlash: $networkDirectoryURIWithTrailingSlash');
-  print(
-      'networkDirectoryURIWithBackSlashes: $networkDirectoryURIWithBackSlashes');
+  print('networkDirectoryPathWithBackSlashes: $networkDirectoryPathWithBackSlashes');
+  print('networkDirectoryURIWithThreeSlashes: $networkDirectoryURIWithThreeSlashes');
+  print('networkDirectoryURIWithTrailingSlash: $networkDirectoryURIWithTrailingSlash');
+  print('networkDirectoryURIWithBackSlashes: $networkDirectoryURIWithBackSlashes');
+  print('networkFile: $networkFile');
+  print('networkFilePath: $networkFilePath');
+  print('networkFilePathWithBackSlashes: $networkFilePathWithBackSlashes');
+  print('networkFileURIWithThreeSlashes: $networkFileURIWithThreeSlashes');
+  print('networkFileURIWithBackSlashes: $networkFileURIWithBackSlashes');
 
   // Actual tests.
   test('file:// File', () {
@@ -119,8 +120,17 @@ void main() {
     expect(parser.file, isNull);
     expect(parser.directory, isNotNull);
     expect(parser.uri, isNull);
-    expect(
-        parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+    expect(parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+  });
+  test('file:// Network File with three forward slashes', () {
+    final parser = URIParser(networkFileURIWithThreeSlashes);
+    expect(parser.type, URIType.file);
+    expect(parser.file, isNotNull);
+    expect(parser.directory, isNull);
+    expect(parser.uri, isNull);
+    expect(parser.result.toString(), equals(networkFileURIWithThreeSlashes));
+
+    print(parser.file?.path);
   });
   test('file:// File with backward slashes', () {
     final parser = URIParser(fileURIWithBackSlashes);
@@ -144,8 +154,15 @@ void main() {
     expect(parser.file, isNull);
     expect(parser.directory, isNotNull);
     expect(parser.uri, isNull);
-    expect(
-        parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+    expect(parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+  });
+  test('file:// Network File with backward slashes', () {
+    final parser = URIParser(networkFileURIWithBackSlashes);
+    expect(parser.type, URIType.file);
+    expect(parser.file, isNotNull);
+    expect(parser.directory, isNull);
+    expect(parser.uri, isNull);
+    expect(parser.result.toString(), equals(networkFileURIWithThreeSlashes));
   });
   test('raw path File', () {
     final parser = URIParser(filePath);
@@ -169,8 +186,15 @@ void main() {
     expect(parser.file, isNull);
     expect(parser.directory, isNotNull);
     expect(parser.uri, isNull);
-    expect(
-        parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+    expect(parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+  });
+  test('raw path Network File', () {
+    final parser = URIParser(networkFilePath);
+    expect(parser.type, URIType.file);
+    expect(parser.file, isNotNull);
+    expect(parser.directory, isNull);
+    expect(parser.uri, isNull);
+    expect(parser.result.toString(), equals(networkFileURIWithThreeSlashes));
   });
   test('raw path File with backward slashes', () {
     final parser = URIParser(fileURIWithBackSlashes);
@@ -194,8 +218,15 @@ void main() {
     expect(parser.file, isNull);
     expect(parser.directory, isNotNull);
     expect(parser.uri, isNull);
-    expect(
-        parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+    expect(parser.result.toString(), equals(networkDirectoryURIWithTrailingSlash));
+  });
+  test('raw path Network File with backward slashes', () {
+    final parser = URIParser(networkFilePathWithBackSlashes);
+    expect(parser.type, URIType.file);
+    expect(parser.file, isNotNull);
+    expect(parser.directory, isNull);
+    expect(parser.uri, isNull);
+    expect(parser.result.toString(), equals(networkFileURIWithThreeSlashes));
   });
   test('network URIs', () {
     final http = URIParser('http://www.test.com');
